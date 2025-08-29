@@ -96,7 +96,7 @@ var roomID = urlParams.get("session") || "defaultRoom";
 var password = "false";
 
 var iframe = document.createElement("iframe");
-iframe.src = "https://vdo.socialstream.ninja/?ln&password="+password+"&push&label=dock&novideo&noaudio&autostart&cleanoutput&room="+roomID;
+iframe.src = "https://vdo.socialstream.ninja/?ln&salt=vdo.ninja&password="+password+"&push&label=dock&vd=0&ad=0&novideo&noaudio&autostart&cleanoutput&room="+roomID; 
 iframe.style.cssText = "width:0;height:0;position:fixed;left:-100px;top:-100px;";
 document.body.appendChild(iframe);
 
@@ -190,3 +190,4 @@ function addMessageToOverlay(data) {
 </script>
 </body>
 </html>
+
