@@ -1,41 +1,49 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teste Completo</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Teste de Chat com SSN</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f5f5f5;
+      background: #f0f0f0;
       text-align: center;
       padding: 50px;
     }
     h1 {
-      color: #2c3e50;
+      color: #333;
     }
-    button {
-      padding: 10px 20px;
-      background: #3498db;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #2980b9;
+    #chat-container {
+      margin: 20px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 400px;
     }
   </style>
 </head>
 <body>
-  <h1>🚀 Deploy + CSS + JS OK!</h1>
-  <p>Se você vê o layout estilizado e o botão funcionando, tá tudo certo.</p>
-  <button onclick="testarJS()">Clique para testar JS</button>
-
-  <script>
-    function testarJS() {
-      alert("JavaScript funcionando! 🎉");
-    }
-  </script>
+  <h1>🚀 Teste de Chat (SSN)</h1>
+  <p>Se o chat aparecer aqui embaixo e responder, está tudo certo.</p>
+  <div id="chat-container">
+    <!-- Aqui vai o código do seu widget -->
+    <script>
+      // Exemplo de chat simples — substitua pelo seu script real
+      const div = document.getElementById("chat-container");
+      div.innerHTML = `
+        <p><strong>Bot:</strong> Olá! Digite algo:</p>
+        <input id="msg" type="text" placeholder="Sua mensagem" />
+        <button onclick="enviar()">Enviar</button>
+        <div id="resposta"></div>
+      `;
+      function enviar() {
+        const msg = document.getElementById("msg").value;
+        document.getElementById("resposta").innerHTML = `<p><strong>Você:</strong> ${msg}</p><p><strong>Bot:</strong> Recebi: "${msg}"</p>`;
+      }
+    </script>
+    <!-- Fim do código -->
+  </div>
 </body>
 </html>
