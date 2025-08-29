@@ -185,31 +185,31 @@ function addMessageToOverlay(data) {
   if (isCheer) {
     const cheerIcon = document.createElement('img');
     cheerIcon.classList.add('cheer-icon');
-if (isCheer) {
-  const cheerIcon = document.createElement('img');
-  cheerIcon.classList.add('cheer-icon');
-  cheerIcon.src = bellBagUrl;
-  bubble.appendChild(cheerIcon);
-}
-if (isSuper) {
-  const superIcon = document.createElement('img');
-  superIcon.classList.add('superchat-icon');
-  superIcon.src = bellBagUrl;
-  bubble.appendChild(superIcon);
-}
+  if (isCheer) {
+    const cheerIcon = document.createElement('img');
+    cheerIcon.classList.add('cheer-icon');
+    cheerIcon.src = bellBagUrl;
+    bubble.appendChild(cheerIcon);
+  }
+  if (isSuper) {
+    const superIcon = document.createElement('img');
+    superIcon.classList.add('superchat-icon');
+    superIcon.src = bellBagUrl;
+    bubble.appendChild(superIcon);
+  }
 
-messageGroup.appendChild(bubble);
-msgEl.appendChild(messageGroup);
+  messageGroup.appendChild(bubble);
+  msgEl.appendChild(messageGroup);
 
-chatContainer.appendChild(msgEl);
+  chatContainer.appendChild(msgEl);
 
-// Limita a 20 mensagens
-if (chatContainer.childElementCount > 20) {
-  chatContainer.removeChild(chatContainer.firstChild);
-  console.log("[DEBUG] Mensagem removida para manter limite de 20");
-}
-} // <- fecha a função addMessageToOverlay
+  // Limita a 20 mensagens
+  if (chatContainer.childElementCount > 20) {
+    chatContainer.removeChild(chatContainer.firstChild);
+    console.log("[DEBUG] Mensagem removida para manter limite de 20");
+  }
+} // ← fecha a função addMessageToOverlay
 
-</script> 
+</script>
 </body>
 </html>
