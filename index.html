@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat Animal Crossing Style - Live</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap');
+
+body {
+    background-color: #79C2D2;
+    font-family: 'Baloo 2', cursive;
+    color: #fff;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+}
+
+#chat-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 500px;
+    width: 100%;
+    padding: 20px;
+}
+
+.chat-message {
+    display: flex;
+    align-items: flex-end;
+    position: relative;
+    animation: fadeIn 0.5s ease-in-out forwards;
+}
+
+.avatar-icon-group {
+    position: relative;
+    width: 70px;
+    height: 70px;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.chat-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 3px solid white;
+    overflow: hidden;
+    background-color: #f0f0f0;
+}
+
+.chat-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.secondary-icon {
+    position: absolute;
+    bottom: -5px;
+    right: -15px;
+    width: 35px;
+    height: 35px;
+    z-index: 3;
+}
+
+.avatar-icon-group .superchat-avatar-icon {
+    position: absolute;
+    bottom: -5px;
+    left: -15px;
+    width: 35px;
+    height: 35px;
+    z-index: 3;
+}
+
+.secondary-icon img, .superchat-avatar-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.message-group {
+    position: relative;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.message-bubble {
+    padding: 15px 20px;
+    border-radius: 25px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    position: relative;
+    background-color: white;
+    word-wrap: break-word;
+    width: fit-content;
+    max-width: 90%;
+    font-weight: 800;
+    color: #4b4b4b;
+    font-size: 16px;
+}
+
+/* Tipos de usuário */
+.chat-message.moderator .message-bubble { background-color: #b4cce4; }
+.chat-message.member .message-bubble { background-color: #e4b887; }
+.chat-message.founder .message-bubble { background-color: #F78C4A; }
+.chat-message.viewer .message-bubble { background-color: white; }
+.chat-message.superchat .message-bubble { background-color: #ffc30f; color: #000; padding-right: 36px; }
+.chat-message.cheer .message-bubble { background-color: #D1C4E9; color: #4A148C; padding-right: 36px; }
+
+.username-container {
+    position: absolute;
+    top: -15px;
+    left: 5px;
+    border-radius: 10px;
+    padding: 4px 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 10;
+    transform: rotate(-5deg);
+}
+
+.chat-message.moderator .username-container { background-color: #3fd8e0; }
+.chat-message.member .username-container { background-color: #e4b887; }
+.chat-message.founder .username-container { background-color: #ef1f26; }
+.chat-message.viewer .username-container { background-color: #b19385; }
+
+.username {
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    font-size: 14px;
+}
+
+.redemption-text {
+    display: block;
+    font-size: 12px;
+    font-weight: bold;
+    margin-top: 10px;
+    background-color: #d1b474;
+    padding: 5px 10px;
+    border-radius: 10px;
+    width: fit-content;
+    margin-left: auto;
+}
+
+/* Ícones de superchat e cheer */
+.chat-message.superchat .superchat-icon,
+.chat-message.cheer .cheer-icon {
+    position: absolute;
+    top: 20%;
+    right: -2px;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    pointer-events: none;
+}
+
+@keyframes fadeIn { 
+    from { opacity:0; transform:translateY(20px); } 
+    to { opacity:1; transform:translateY(0); } 
+}
+</style>
+</head>
+<body>
+<div id="chat-container"></div>
+
+<script>
+const chatContainer = document.getElementById('chat-container');
+
+function createMessageElement(messageData) {
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('chat-message', messageData.role || "viewer");
+
+    if (messageData.text && messageData.text.toLowerCase().includes('super chat')) {
+        messageElement.classList.add('superchat');
+    }
+    if (messageData.isCheer) {
+        messageElement.classList.add('cheer');
+    }
+
+    const avatarGroup = document.createElement('div');
+    avatarGroup.classList.add('avatar-icon-group');
+
+    const avatarDiv = document.createElement('div');
+    avatarDiv.classList.add('chat-avatar');
+    const avatarImg = document.createElement('img');
+    avatarImg.src = messageData.avatarUrl || "https://i.imgur.com/afFp7pu.png";
+    avatarDiv.appendChild(avatarImg);
+    avatarGroup.appendChild(avatarDiv);
+
+    messageElement.appendChild(avatarGroup);
+
+    const messageGroup = document.createElement('div');
+    messageGroup.classList.add('message-group');
+
+    const usernameContainer = document.createElement('div');
+    usernameContainer.classList.add('username-container');
+    const usernameSpan = document.createElement('span');
+    usernameSpan.classList.add('username');
+    usernameSpan.textContent = messageData.user;
+    usernameContainer.appendChild(usernameSpan);
+    messageGroup.appendChild(usernameContainer);
+
+    const bubble = document.createElement('div');
+    bubble.classList.add('message-bubble');
+    bubble.textContent = messageData.text;
+
+    messageGroup.appendChild(bubble);
+    messageElement.appendChild(messageGroup);
+
+    return messageElement;
+}
+
+// Escuta mensagens do Social Stream Ninja
+window.addEventListener("message", (event) => {
+    if (event.data && event.data.text) {
+        const messageData = {
+            user: event.data.name,
+            role: "viewer", // pode mapear badges aqui depois
+            avatarUrl: event.data.profileImage,
+            text: event.data.text
+        };
+
+        const el = createMessageElement(messageData);
+        chatContainer.appendChild(el);
+
+        if (chatContainer.childElementCount > 8) {
+            chatContainer.removeChild(chatContainer.firstChild);
+        }
+    }
+});
+</script>
+</body>
+</html>
