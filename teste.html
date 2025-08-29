@@ -89,6 +89,8 @@ body, html {
 <body>
 <div id="chat-container"></div>
 
+<!-- ... cabeçalho, estilos e HTML iguais ao que você já tem ... -->
+
 <script>
 console.log("[DEBUG] Overlay carregado.");
 
@@ -109,7 +111,7 @@ iframe.onload = () => console.log("[DEBUG] iFrame de conexão carregado.");
 window.addEventListener("message", function(e){
   if (e.source !== iframe.contentWindow) return;
   if (e.data.dataReceived && e.data.dataReceived.overlayNinja){
-    console.log("[DEBUG] Mensagem recebida:", e.data.dataReceived.overlayNinja);
+    console.log("[DEBUG] Mensagem recebida do SSN:", e.data.dataReceived.overlayNinja);
     addMessageToOverlay(e.data.dataReceived.overlayNinja);
   } else {
     console.log("[DEBUG] Evento recebido mas não é overlayNinja:", e.data);
@@ -119,19 +121,19 @@ window.addEventListener("message", function(e){
 const chatContainer = document.getElementById('chat-container');
 
 function addMessageToOverlay(data) {
-  if (!data.chatname && !data.chatmessage) {
-    console.warn("[DEBUG] Mensagem ignorada (sem nome ou texto):", data);
-    return;
-  }
+  console.log("[DEBUG] Dados recebidos no addMessageToOverlay:", data);
 
-  console.log(`[DEBUG] Renderizando mensagem de "${data.chatname}" (role: ${data.role || 'viewer'})`);
+  // Antes: if (!data.chatname && !data.chatmessage) return;
+  if (!data.chatname && !data.chatmessage) {
+    console.warn("[DEBUG] Mensagem sem nome e sem texto — tentando renderizar assim mesmo para debug");
+  }
 
   const isSuper = data.chatmessage && data.chatmessage.toLowerCase().includes('super chat');
   const isCheer = data.type && data.type.toLowerCase().includes('cheer');
 
   if (isSuper) {
     data.secondaryIconUrl = 'https://dodo.ac/np/images/thumb/3/3c/Heart_Crystal_NH_Inv_Icon.png/96px-Heart_Crystal_NH_Inv_Icon.png';
-    console.log("[DEBUG] Mensagem identificada como SUPERCHAT (secondary trocado para coração)");
+    console.log("[DEBUG] Mensagem identificada como SUPERCHAT");
   }
 
   const msgEl = document.createElement('div');
@@ -145,8 +147,8 @@ function addMessageToOverlay(data) {
   avatarDiv.classList.add('chat-avatar');
   const avatarImg = document.createElement('img');
   avatarImg.src = data.chatimg || '';
-  avatarImg.onload = () => console.log(`[DEBUG] Avatar carregado para ${data.chatname}`);
-  avatarImg.onerror = () => console.error(`[ERRO] Falha ao carregar avatar para ${data.chatname}`);
+  avatarImg.onload = () => console.log(`[DEBUG] Avatar carregado para ${data.chatname||"sem nome"}`);
+  avatarImg.onerror = () => console.error(`[ERRO] Falha ao carregar avatar para ${data.chatname||"sem nome"}`);
   avatarDiv.appendChild(avatarImg);
   avatarGroup.appendChild(avatarDiv);
 
@@ -155,8 +157,8 @@ function addMessageToOverlay(data) {
     secDiv.classList.add('secondary-icon');
     const secImg = document.createElement('img');
     secImg.src = data.secondaryIconUrl;
-    secImg.onload = () => console.log(`[DEBUG] Secondary icon carregado para ${data.chatname}`);
-    secImg.onerror = () => console.error(`[ERRO] Falha ao carregar secondary icon para ${data.chatname}`);
+    secImg.onload = () => console.log(`[DEBUG] Secondary icon carregado para ${data.chatname||"sem nome"}`);
+    secImg.onerror = () => console.error(`[ERRO] Falha ao carregar secondary icon para ${data.chatname||"sem nome"}`);
     secDiv.appendChild(secImg);
     avatarGroup.appendChild(secDiv);
   }
@@ -184,7 +186,6 @@ function addMessageToOverlay(data) {
     cheerIcon.src = bellBagUrl;
     bubble.appendChild(cheerIcon);
   }
-
   if (isSuper) {
     const superIcon = document.createElement('img');
     superIcon.classList.add('superchat-icon');
@@ -197,13 +198,11 @@ function addMessageToOverlay(data) {
 
   chatContainer.appendChild(msgEl);
 
-  // Limita a 20 mensagens
   if (chatContainer.childElementCount > 20) {
     chatContainer.removeChild(chatContainer.firstChild);
     console.log("[DEBUG] Mensagem removida para manter limite de 20");
   }
-} // ← fecha a função addMessageToOverlay
-
+}
 </script>
 </body>
 </html>
