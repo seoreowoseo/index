@@ -6,6 +6,7 @@
 <meta name="generator" content="Social Stream Ninja - https://github.com/steveseguin/social_stream">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
 <style>
+/* === SEU CSS ORIGINAL === */
 body, html {
   background: transparent;
   font-family: 'Baloo 2', cursive;
@@ -86,103 +87,51 @@ console.log("[DEBUG] Overlay carregado.");
 const urlParams = new URLSearchParams(window.location.search);
 const roomID   = urlParams.get("session") || "defaultRoom";
 const password = urlParams.get("password") || "false";
-const limit    = parseInt(urlParams.get("limit") || "20", 10);
-const useWS    = urlParams.has("server") || urlParams.has("server2");
-let   serverURL= urlParams.get("server") || urlParams.get("server2") || "wss://io.socialstream.ninja";
 const localTest= urlParams.has("localtest");
 
 console.log("[DEBUG] Session ID:", roomID);
-console.log("[DEBUG] Params -> limit:", limit, "| useWS:", useWS, "| serverURL:", serverURL, "| localTest:", localTest);
 
-// === IFRAME (WebRTC data channel) ===
+// === IFRAME ===
 const iframe = document.createElement("iframe");
-iframe.src = "https://vdo.socialstream.ninja/?ln&salt=vdo.ninja"
-          + "&password=" + encodeURIComponent(password)
-          + "&push&label=dock&vd=0&ad=0&novideo&noaudio&autostart&cleanoutput"
-          + "&room=" + encodeURIComponent(roomID);
+iframe.src = "https://vdo.socialstream.ninja/?ln&password="+encodeURIComponent(password)
+           + "&push&label=dock&novideo&noaudio&autostart&cleanoutput&room="+encodeURIComponent(roomID);
 iframe.style.cssText = "width:0;height:0;position:fixed;left:-100px;top:-100px;";
 document.body.appendChild(iframe);
 iframe.onload = () => console.log("[DEBUG] iFrame de conexão carregado.");
 
-// Listener de mensagens do iframe
+// === LISTENER ===
 window.addEventListener("message", function(e){
   if (e.source !== iframe.contentWindow) return;
-  // Logue tudo pra ver o que chega
   console.log("[DEBUG] postMessage origin:", e.origin, "| raw:", e.data);
-  const payload = e?.data?.dataReceived?.overlayNinja;
-  if (payload) {
-    console.log("[DEBUG] Mensagem recebida do SSN (iframe):", payload);
-    addMessageToOverlay(payload);
-  } else {
-    console.log("[DEBUG] Evento recebido do iframe, mas sem overlayNinja.");
+
+  // 1. overlayNinja padrão
+  if (e.data?.dataReceived?.overlayNinja) {
+    console.log("[DEBUG] Mensagem recebida (overlayNinja):", e.data.dataReceived.overlayNinja);
+    addMessageToOverlay(e.data.dataReceived.overlayNinja);
+    return;
   }
+
+  // 2. Payload direto com chatname/chatmessage
+  if (e.data?.chatname || e.data?.chatmessage) {
+    console.log("[DEBUG] Mensagem recebida (formato direto):", e.data);
+    addMessageToOverlay(e.data);
+    return;
+  }
+
+  console.log("[DEBUG] Evento recebido do iframe, mas sem dados de chat.");
 });
-
-// === WS opcional (fallback) — só ativa se passar &server ou &server2 na URL ===
-let socketserver = null;
-let reconnectBackoff = 1;
-
-function setupSocket(){
-  socketserver.onopen = function(){
-    console.log("[DEBUG] WebSocket conectado:", serverURL);
-    reconnectBackoff = 1;
-    // out/in = compat com sample
-    socketserver.send(JSON.stringify({"join":roomID, "out":3, "in":4}));
-  };
-  socketserver.onclose = function(){
-    console.warn("[DEBUG] WebSocket fechado. Tentando reconectar…");
-    setTimeout(function(){
-      reconnectBackoff+=1;
-      socketserver = new WebSocket(serverURL);
-      setupSocket();
-    }, 100 * reconnectBackoff);
-  };
-  socketserver.addEventListener('message', function (event) {
-    if (!event.data) return;
-    try {
-      const data = JSON.parse(event.data);
-      console.log("[DEBUG] WS message:", data);
-      if (data) addMessageToOverlay(data);
-    } catch (err) {
-      console.error("[ERRO] Falha ao processar WS message:", err, "bruto:", event.data);
-    }
-  });
-}
-if (useWS){
-  try {
-    socketserver = new WebSocket(serverURL);
-    setupSocket();
-  } catch (err) {
-    console.error("[ERRO] WebSocket init:", err);
-  }
-}
-
-// === Timeout de sanidade: avisa se nada chegou em X segundos
-let gotAnyMessage = false;
-setTimeout(()=>{
-  if (!gotAnyMessage){
-    console.warn("[DEBUG] Nenhuma mensagem recebida nos primeiros 10s. Verifique session, SSN e painéis de envio.");
-  }
-}, 10000);
 
 // === RENDER ===
 const chatContainer = document.getElementById('chat-container');
 
 function addMessageToOverlay(data) {
-  gotAnyMessage = true;
-  console.log("[DEBUG] addMessageToOverlay payload:", data);
-
-  // Não descarte logo de cara; logue e tente renderizar
-  if (!data.chatname && !data.chatmessage) {
-    console.warn("[DEBUG] Mensagem sem nome/texto — renderizando mesmo assim (modo debug).");
-  }
+  console.log("[DEBUG] Renderizando:", data);
 
   const isSuper = (data.chatmessage || "").toLowerCase().includes("super chat");
   const isCheer = (data.type || "").toLowerCase().includes("cheer");
 
   if (isSuper) {
     data.secondaryIconUrl = 'https://dodo.ac/np/images/thumb/3/3c/Heart_Crystal_NH_Inv_Icon.png/96px-Heart_Crystal_NH_Inv_Icon.png';
-    console.log("[DEBUG] SUPERCHAT detectado (secondary = coração)");
   }
 
   const msgEl = document.createElement('div');
@@ -190,16 +139,12 @@ function addMessageToOverlay(data) {
   if (isSuper) msgEl.classList.add('superchat');
   if (isCheer) msgEl.classList.add('cheer');
 
-  // Avatar + secondary
   const avatarGroup = document.createElement('div');
   avatarGroup.classList.add('avatar-icon-group');
-
   const avatarDiv = document.createElement('div');
   avatarDiv.classList.add('chat-avatar');
   const avatarImg = document.createElement('img');
   avatarImg.src = data.chatimg || '';
-  avatarImg.onload = () => console.log(`[DEBUG] Avatar carregado para ${data.chatname||"sem nome"}`);
-  avatarImg.onerror = () => console.error(`[ERRO] Falha ao carregar avatar para ${data.chatname||"sem nome"}`);
   avatarDiv.appendChild(avatarImg);
   avatarGroup.appendChild(avatarDiv);
 
@@ -208,14 +153,11 @@ function addMessageToOverlay(data) {
     secDiv.classList.add('secondary-icon');
     const secImg = document.createElement('img');
     secImg.src = data.secondaryIconUrl;
-    secImg.onload = () => console.log(`[DEBUG] Secondary icon carregado para ${data.chatname||"sem nome"}`);
-    secImg.onerror = () => console.error(`[ERRO] Falha ao carregar secondary icon para ${data.chatname||"sem nome"}`);
     secDiv.appendChild(secImg);
     avatarGroup.appendChild(secDiv);
   }
   msgEl.appendChild(avatarGroup);
 
-  // Nome e balão
   const messageGroup = document.createElement('div');
   messageGroup.classList.add('message-group');
 
@@ -231,13 +173,12 @@ function addMessageToOverlay(data) {
   bubble.classList.add('message-bubble');
   bubble.textContent = data.chatmessage || '';
 
-  // Ícones no balão
   const bellBagUrl = 'https://dodo.ac/np/images/thumb/d/d3/Bell_Bag_NH_Inv_Icon.png/96px-Bell_Bag_NH_Inv_Icon.png';
   if (isCheer) {
     const cheerIcon = document.createElement('img');
     cheerIcon.classList.add('cheer-icon');
     cheerIcon.src = bellBagUrl;
-    bubble.appendChild(cheerIcon);
+        bubble.appendChild(cheerIcon);
   }
   if (isSuper) {
     const superIcon = document.createElement('img');
@@ -251,17 +192,17 @@ function addMessageToOverlay(data) {
 
   chatContainer.appendChild(msgEl);
 
-  // Limite de mensagens na tela
-  if (chatContainer.childElementCount > limit) {
+  // Limita a 20 mensagens
+  if (chatContainer.childElementCount > 20) {
     chatContainer.removeChild(chatContainer.firstChild);
-    console.log("[DEBUG] Mensagem removida para manter limite de", limit);
+    console.log("[DEBUG] Mensagem removida para manter limite de 20");
   }
-}
+} // ← fecha a função addMessageToOverlay
 
-// === Local test opcional (para validar render sem SSN): use &localtest=1
-if (localTest){
-  setTimeout(()=>{
-    console.log("[DEBUG] Injectando mensagem local de teste (localtest=1)");
+// === Teste local opcional ===
+if (localTest) {
+  setTimeout(() => {
+    console.log("[DEBUG] Injectando mensagem local de teste");
     addMessageToOverlay({
       chatname: "Isabelle",
       chatmessage: "Teste local do overlay 🌴",
@@ -274,3 +215,5 @@ if (localTest){
 </script>
 </body>
 </html>
+
+      
