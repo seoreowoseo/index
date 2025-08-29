@@ -6,7 +6,6 @@
 <meta name="generator" content="Social Stream Ninja - https://github.com/steveseguin/social_stream">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
 <style>
-/* === SEU CSS ORIGINAL === */
 body, html {
   background: transparent;
   font-family: 'Baloo 2', cursive;
@@ -79,11 +78,11 @@ body, html {
 </head>
 <body>
 <div id="chat-container"></div>
+<button id="debug-btn" style="position:fixed;top:10px;right:10px;z-index:999;">💬 Mensagem Fake</button>
 
 <script>
 console.log("[DEBUG] Overlay carregado.");
 
-// === PARAMS ===
 const urlParams = new URLSearchParams(window.location.search);
 const roomID   = urlParams.get("session") || "defaultRoom";
 const password = urlParams.get("password") || "false";
@@ -104,20 +103,16 @@ window.addEventListener("message", function(e){
   if (e.source !== iframe.contentWindow) return;
   console.log("[DEBUG] postMessage origin:", e.origin, "| raw:", e.data);
 
-  // 1. overlayNinja padrão
   if (e.data?.dataReceived?.overlayNinja) {
     console.log("[DEBUG] Mensagem recebida (overlayNinja):", e.data.dataReceived.overlayNinja);
     addMessageToOverlay(e.data.dataReceived.overlayNinja);
     return;
   }
-
-  // 2. Payload direto com chatname/chatmessage
   if (e.data?.chatname || e.data?.chatmessage) {
     console.log("[DEBUG] Mensagem recebida (formato direto):", e.data);
     addMessageToOverlay(e.data);
     return;
   }
-
   console.log("[DEBUG] Evento recebido do iframe, mas sem dados de chat.");
 });
 
@@ -178,8 +173,7 @@ function addMessageToOverlay(data) {
     const cheerIcon = document.createElement('img');
     cheerIcon.classList.add('cheer-icon');
     cheerIcon.src = bellBagUrl;
-        bubble.appendChild(cheerIcon);
-  }
+    bubble.appendChild(cheerIcon);
   }
   if (isSuper) {
     const superIcon = document.createElement('img');
@@ -190,7 +184,6 @@ function addMessageToOverlay(data) {
 
   messageGroup.appendChild(bubble);
   msgEl.appendChild(messageGroup);
-
   chatContainer.appendChild(msgEl);
 
   // Limita a 20 mensagens
@@ -200,13 +193,25 @@ function addMessageToOverlay(data) {
   }
 } // ← fecha a função addMessageToOverlay
 
-// === Teste local opcional ===
+// === Botão de debug para injetar mensagem fake ===
+document.getElementById('debug-btn').addEventListener('click', () => {
+  console.log("[DEBUG] Botão de debug clicado — injetando mensagem fake");
+  addMessageToOverlay({
+    chatname: "Tom Nook",
+    chatmessage: "Bem-vindo à ilha! 🌴",
+    chatimg: "https://i.pravatar.cc/70?img=5",
+    type: "twitch",
+    role: "founder"
+  });
+});
+
+// === Teste local automático se &localtest=1 ===
 if (localTest) {
   setTimeout(() => {
-    console.log("[DEBUG] Injectando mensagem local de teste");
+    console.log("[DEBUG] Injectando mensagem local de teste (localtest=1)");
     addMessageToOverlay({
       chatname: "Isabelle",
-      chatmessage: "Teste local do overlay 🌴",
+      chatmessage: "Teste local do overlay 🌸",
       chatimg: "https://i.pravatar.cc/70?img=12",
       type: "twitch",
       role: "member"
