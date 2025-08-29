@@ -89,8 +89,6 @@ body, html {
 <body>
 <div id="chat-container"></div>
 
-<!-- ... cabeçalho, estilos e HTML iguais ao que você já tem ... -->
-
 <script>
 console.log("[DEBUG] Overlay carregado.");
 
@@ -123,9 +121,8 @@ const chatContainer = document.getElementById('chat-container');
 function addMessageToOverlay(data) {
   console.log("[DEBUG] Dados recebidos no addMessageToOverlay:", data);
 
-  // Antes: if (!data.chatname && !data.chatmessage) return;
   if (!data.chatname && !data.chatmessage) {
-    console.warn("[DEBUG] Mensagem sem nome e sem texto — tentando renderizar assim mesmo para debug");
+    console.warn("[DEBUG] Mensagem sem nome/texto — tentando renderizar assim mesmo para debug");
   }
 
   const isSuper = data.chatmessage && data.chatmessage.toLowerCase().includes('super chat');
@@ -198,11 +195,13 @@ function addMessageToOverlay(data) {
 
   chatContainer.appendChild(msgEl);
 
+  // Limita a 20 mensagens
   if (chatContainer.childElementCount > 20) {
     chatContainer.removeChild(chatContainer.firstChild);
     console.log("[DEBUG] Mensagem removida para manter limite de 20");
   }
-}
+} // ← fecha a função addMessageToOverlay
+
 </script>
 </body>
 </html>
