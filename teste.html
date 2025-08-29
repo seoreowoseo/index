@@ -56,12 +56,8 @@ body, html {
 .chat-message.member .message-bubble    { background-color: #e4b887; }
 .chat-message.founder .message-bubble   { background-color: #F78C4A; }
 .chat-message.viewer .message-bubble    { background-color: white; }
-.chat-message.superchat .message-bubble {
-  background-color: #ffc30f; color: #000; padding-right: 36px;
-}
-.chat-message.cheer .message-bubble {
-  background-color: #D1C4E9; color: #4A148C; padding-right: 36px;
-}
+.chat-message.superchat .message-bubble { background-color: #ffc30f; color: #000; padding-right: 36px; }
+.chat-message.cheer .message-bubble     { background-color: #D1C4E9; color: #4A148C; padding-right: 36px; }
 .username-container {
   position: absolute; top: -15px; left: 5px;
   border-radius: 10px; padding: 4px 10px;
@@ -71,19 +67,13 @@ body, html {
 .chat-message.member .username-container    { background-color: #e4b887; }
 .chat-message.founder .username-container   { background-color: #ef1f26; }
 .chat-message.viewer .username-container    { background-color: #b19385; }
-.username {
-  font-weight: bold; color: #fff; font-size: 14px;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-}
+.username { font-weight: bold; color: #fff; font-size: 14px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
 .chat-message.superchat .superchat-icon,
 .chat-message.cheer .cheer-icon {
   position: absolute; top: 20%; right: -2px;
   transform: translateY(-50%); width: 30px; height: 30px;
 }
-@keyframes fadeIn {
-  from { opacity:0; transform:translateY(20px); }
-  to { opacity:1; transform:translateY(0); }
-}
+@keyframes fadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
 </style>
 </head>
 <body>
@@ -92,45 +82,107 @@ body, html {
 <script>
 console.log("[DEBUG] Overlay carregado.");
 
-// === CONFIGURAÇÃO DO SSN ===
-var urlParams = new URLSearchParams(window.location.search);
-var roomID = urlParams.get("session") || "defaultRoom";
-var password = "false";
+// === PARAMS ===
+const urlParams = new URLSearchParams(window.location.search);
+const roomID   = urlParams.get("session") || "defaultRoom";
+const password = urlParams.get("password") || "false";
+const limit    = parseInt(urlParams.get("limit") || "20", 10);
+const useWS    = urlParams.has("server") || urlParams.has("server2");
+let   serverURL= urlParams.get("server") || urlParams.get("server2") || "wss://io.socialstream.ninja";
+const localTest= urlParams.has("localtest");
 
 console.log("[DEBUG] Session ID:", roomID);
+console.log("[DEBUG] Params -> limit:", limit, "| useWS:", useWS, "| serverURL:", serverURL, "| localTest:", localTest);
 
-var iframe = document.createElement("iframe");
-iframe.src = "https://vdo.socialstream.ninja/?ln&password="+password+"&push&label=dock&novideo&noaudio&autostart&cleanoutput&room="+roomID;
+// === IFRAME (WebRTC data channel) ===
+const iframe = document.createElement("iframe");
+iframe.src = "https://vdo.socialstream.ninja/?ln&salt=vdo.ninja"
+          + "&password=" + encodeURIComponent(password)
+          + "&push&label=dock&vd=0&ad=0&novideo&noaudio&autostart&cleanoutput"
+          + "&room=" + encodeURIComponent(roomID);
 iframe.style.cssText = "width:0;height:0;position:fixed;left:-100px;top:-100px;";
 document.body.appendChild(iframe);
-
 iframe.onload = () => console.log("[DEBUG] iFrame de conexão carregado.");
 
+// Listener de mensagens do iframe
 window.addEventListener("message", function(e){
   if (e.source !== iframe.contentWindow) return;
-  if (e.data.dataReceived && e.data.dataReceived.overlayNinja){
-    console.log("[DEBUG] Mensagem recebida do SSN:", e.data.dataReceived.overlayNinja);
-    addMessageToOverlay(e.data.dataReceived.overlayNinja);
+  // Logue tudo pra ver o que chega
+  console.log("[DEBUG] postMessage origin:", e.origin, "| raw:", e.data);
+  const payload = e?.data?.dataReceived?.overlayNinja;
+  if (payload) {
+    console.log("[DEBUG] Mensagem recebida do SSN (iframe):", payload);
+    addMessageToOverlay(payload);
   } else {
-    console.log("[DEBUG] Evento recebido mas não é overlayNinja:", e.data);
+    console.log("[DEBUG] Evento recebido do iframe, mas sem overlayNinja.");
   }
 });
 
+// === WS opcional (fallback) — só ativa se passar &server ou &server2 na URL ===
+let socketserver = null;
+let reconnectBackoff = 1;
+
+function setupSocket(){
+  socketserver.onopen = function(){
+    console.log("[DEBUG] WebSocket conectado:", serverURL);
+    reconnectBackoff = 1;
+    // out/in = compat com sample
+    socketserver.send(JSON.stringify({"join":roomID, "out":3, "in":4}));
+  };
+  socketserver.onclose = function(){
+    console.warn("[DEBUG] WebSocket fechado. Tentando reconectar…");
+    setTimeout(function(){
+      reconnectBackoff+=1;
+      socketserver = new WebSocket(serverURL);
+      setupSocket();
+    }, 100 * reconnectBackoff);
+  };
+  socketserver.addEventListener('message', function (event) {
+    if (!event.data) return;
+    try {
+      const data = JSON.parse(event.data);
+      console.log("[DEBUG] WS message:", data);
+      if (data) addMessageToOverlay(data);
+    } catch (err) {
+      console.error("[ERRO] Falha ao processar WS message:", err, "bruto:", event.data);
+    }
+  });
+}
+if (useWS){
+  try {
+    socketserver = new WebSocket(serverURL);
+    setupSocket();
+  } catch (err) {
+    console.error("[ERRO] WebSocket init:", err);
+  }
+}
+
+// === Timeout de sanidade: avisa se nada chegou em X segundos
+let gotAnyMessage = false;
+setTimeout(()=>{
+  if (!gotAnyMessage){
+    console.warn("[DEBUG] Nenhuma mensagem recebida nos primeiros 10s. Verifique session, SSN e painéis de envio.");
+  }
+}, 10000);
+
+// === RENDER ===
 const chatContainer = document.getElementById('chat-container');
 
 function addMessageToOverlay(data) {
-  console.log("[DEBUG] Dados recebidos no addMessageToOverlay:", data);
+  gotAnyMessage = true;
+  console.log("[DEBUG] addMessageToOverlay payload:", data);
 
+  // Não descarte logo de cara; logue e tente renderizar
   if (!data.chatname && !data.chatmessage) {
-    console.warn("[DEBUG] Mensagem sem nome/texto — tentando renderizar assim mesmo para debug");
+    console.warn("[DEBUG] Mensagem sem nome/texto — renderizando mesmo assim (modo debug).");
   }
 
-  const isSuper = data.chatmessage && data.chatmessage.toLowerCase().includes('super chat');
-  const isCheer = data.type && data.type.toLowerCase().includes('cheer');
+  const isSuper = (data.chatmessage || "").toLowerCase().includes("super chat");
+  const isCheer = (data.type || "").toLowerCase().includes("cheer");
 
   if (isSuper) {
     data.secondaryIconUrl = 'https://dodo.ac/np/images/thumb/3/3c/Heart_Crystal_NH_Inv_Icon.png/96px-Heart_Crystal_NH_Inv_Icon.png';
-    console.log("[DEBUG] Mensagem identificada como SUPERCHAT");
+    console.log("[DEBUG] SUPERCHAT detectado (secondary = coração)");
   }
 
   const msgEl = document.createElement('div');
@@ -138,8 +190,10 @@ function addMessageToOverlay(data) {
   if (isSuper) msgEl.classList.add('superchat');
   if (isCheer) msgEl.classList.add('cheer');
 
+  // Avatar + secondary
   const avatarGroup = document.createElement('div');
   avatarGroup.classList.add('avatar-icon-group');
+
   const avatarDiv = document.createElement('div');
   avatarDiv.classList.add('chat-avatar');
   const avatarImg = document.createElement('img');
@@ -161,6 +215,7 @@ function addMessageToOverlay(data) {
   }
   msgEl.appendChild(avatarGroup);
 
+  // Nome e balão
   const messageGroup = document.createElement('div');
   messageGroup.classList.add('message-group');
 
@@ -176,6 +231,7 @@ function addMessageToOverlay(data) {
   bubble.classList.add('message-bubble');
   bubble.textContent = data.chatmessage || '';
 
+  // Ícones no balão
   const bellBagUrl = 'https://dodo.ac/np/images/thumb/d/d3/Bell_Bag_NH_Inv_Icon.png/96px-Bell_Bag_NH_Inv_Icon.png';
   if (isCheer) {
     const cheerIcon = document.createElement('img');
@@ -195,14 +251,26 @@ function addMessageToOverlay(data) {
 
   chatContainer.appendChild(msgEl);
 
-  // Limita a 20 mensagens
-  if (chatContainer.childElementCount > 20) {
+  // Limite de mensagens na tela
+  if (chatContainer.childElementCount > limit) {
     chatContainer.removeChild(chatContainer.firstChild);
-    console.log("[DEBUG] Mensagem removida para manter limite de 20");
+    console.log("[DEBUG] Mensagem removida para manter limite de", limit);
   }
-} // ← fecha a função addMessageToOverlay
+}
 
+// === Local test opcional (para validar render sem SSN): use &localtest=1
+if (localTest){
+  setTimeout(()=>{
+    console.log("[DEBUG] Injectando mensagem local de teste (localtest=1)");
+    addMessageToOverlay({
+      chatname: "Isabelle",
+      chatmessage: "Teste local do overlay 🌴",
+      chatimg: "https://i.pravatar.cc/70?img=12",
+      type: "twitch",
+      role: "member"
+    });
+  }, 500);
+}
 </script>
 </body>
 </html>
-
