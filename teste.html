@@ -2,151 +2,186 @@
 <html lang="pt-br">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chat Animal Crossing Style - Simulação Final (com Debug)</title>
+<title>Animal Crossing Overlay - Debug</title>
+<meta name="generator" content="Social Stream Ninja - https://github.com/steveseguin/social_stream">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap');
-
-/* Seu CSS original */
-body {
-    background-color: #79C2D2;
-    font-family: 'Baloo 2', cursive;
-    color: #fff;
-    height: 100vh;
-    overflow: hidden;
-    position: relative;
+body, html {
+  background: transparent;
+  font-family: 'Baloo 2', cursive;
+  margin:0; padding:0;
 }
 #chat-container {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    max-width: 500px;
-    width: 100%;
-    padding: 20px;
+  position: fixed;
+  bottom: 0; left: 0;
+  display: flex; flex-direction: column;
+  gap: 20px;
+  max-width: 500px; width: 100%;
+  padding: 20px;
 }
-/* (restante do seu CSS igual ao que enviou antes) */
+.chat-message {
+  display: flex; align-items: flex-end;
+  animation: fadeIn 0.5s ease-in-out forwards;
+}
+.avatar-icon-group {
+  position: relative; width: 70px; height: 70px;
+  margin-right: 15px; flex-shrink: 0;
+}
+.chat-avatar {
+  width: 70px; height: 70px; border-radius: 50%;
+  border: 3px solid white; overflow: hidden;
+  background-color: #f0f0f0;
+}
+.chat-avatar img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.secondary-icon {
+  position: absolute; bottom: -5px; right: -15px;
+  width: 35px; height: 35px; z-index: 3;
+}
+.secondary-icon img {
+  width: 100%; height: 100%; object-fit: contain;
+}
+.message-group {
+  position: relative; flex-grow: 1;
+  display: flex; flex-direction: column; align-items: flex-start;
+}
+.message-bubble {
+  padding: 15px 20px; border-radius: 25px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  background-color: white; max-width: 90%;
+  font-weight: 800; color: #4b4b4b; font-size: 16px;
+}
+.chat-message.moderator .message-bubble { background-color: #b4cce4; }
+.chat-message.member .message-bubble    { background-color: #e4b887; }
+.chat-message.founder .message-bubble   { background-color: #F78C4A; }
+.chat-message.viewer .message-bubble    { background-color: white; }
+.chat-message.superchat .message-bubble {
+  background-color: #ffc30f; color: #000; padding-right: 36px;
+}
+.chat-message.cheer .message-bubble {
+  background-color: #D1C4E9; color: #4A148C; padding-right: 36px;
+}
+.username-container {
+  position: absolute; top: -15px; left: 5px;
+  border-radius: 10px; padding: 4px 10px;
+  transform: rotate(-5deg); z-index: 10;
+}
+.chat-message.moderator .username-container { background-color: #3fd8e0; }
+.chat-message.member .username-container    { background-color: #e4b887; }
+.chat-message.founder .username-container   { background-color: #ef1f26; }
+.chat-message.viewer .username-container    { background-color: #b19385; }
+.username {
+  font-weight: bold; color: #fff; font-size: 14px;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+.chat-message.superchat .superchat-icon,
+.chat-message.cheer .cheer-icon {
+  position: absolute; top: 20%; right: -2px;
+  transform: translateY(-50%); width: 30px; height: 30px;
+}
+@keyframes fadeIn {
+  from { opacity:0; transform:translateY(20px); }
+  to { opacity:1; transform:translateY(0); }
+}
 </style>
 </head>
 <body>
 <div id="chat-container"></div>
 
 <script>
-console.log("[DEBUG] Script de chat iniciado");
+console.log("[DEBUG] Overlay carregado.");
 
+// === CONFIGURAÇÃO DO SSN ===
+var urlParams = new URLSearchParams(window.location.search);
+var roomID = urlParams.get("session") || "defaultRoom";
+var password = "false";
+
+console.log("[DEBUG] Session ID:", roomID);
+
+var iframe = document.createElement("iframe");
+iframe.src = "https://vdo.socialstream.ninja/?ln&password="+password+"&push&label=dock&novideo&noaudio&autostart&cleanoutput&room="+roomID;
+iframe.style.cssText = "width:0;height:0;position:fixed;left:-100px;top:-100px;";
+document.body.appendChild(iframe);
+
+iframe.onload = () => console.log("[DEBUG] iFrame de conexão carregado.");
+
+window.addEventListener("message", function(e){
+  if (e.source !== iframe.contentWindow) return;
+  if (e.data.dataReceived && e.data.dataReceived.overlayNinja){
+    console.log("[DEBUG] Mensagem recebida:", e.data.dataReceived.overlayNinja);
+    addMessageToOverlay(e.data.dataReceived.overlayNinja);
+  } else {
+    console.log("[DEBUG] Evento recebido mas não é overlayNinja:", e.data);
+  }
+});
+
+// === FUNÇÃO DE RENDERIZAÇÃO ===
 const chatContainer = document.getElementById('chat-container');
-if(chatContainer){
-  console.log("[DEBUG] Elemento #chat-container encontrado");
-}else{
-  console.error("[ERRO] Elemento #chat-container NÃO encontrado!");
-}
 
-/* URL do coração usado como secondary no Super Chat */
-const HEART_URL = 'https://dodo.ac/np/images/thumb/3/3c/Heart_Crystal_NH_Inv_Icon.png/120px-Heart_Crystal_NH_Inv_Icon.png';
+function addMessageToOverlay(data) {
+  if (!data.chatname && !data.chatmessage) {
+    console.warn("[DEBUG] Mensagem ignorada (sem nome ou texto):", data);
+    return;
+  }
 
-const messagesToSimulate = [
-    { user: 'Alice', role: 'moderator', avatarUrl: 'https://i.pravatar.cc/70?img=1', secondaryIconUrl: 'https://dodo.ac/np/images/thumb/a/a9/Golden_Net_NH_Inv_Icon.png/120px-Golden_Net_NH_Inv_Icon.png', text: 'Bem-vindos à live!' },
-    { user: 'Bob', role: 'member', avatarUrl: 'https://i.pravatar.cc/70?img=2', secondaryIconUrl: 'https://dodo.ac/np/images/thumb/a/a2/100_Bells_NH_Inv_Icon.png/120px-100_Bells_NH_Inv_Icon.png', text: 'Sou membro do canal' },
-    { user: 'Carol', role: 'founder', avatarUrl: 'https://i.pravatar.cc/70?img=3', secondaryIconUrl: 'https://dodo.ac/np/images/thumb/d/dd/Gold_Roses_NH_Inv_Icon.png/120px-Gold_Roses_NH_Inv_Icon.png', text: 'Essa animação está incrível!' },
-    { user: 'Dave', role: 'viewer', avatarUrl: 'https://i.pravatar.cc/70?img=4', text: 'Super Chat: Valeu pela live!', secondaryIconUrl: HEART_URL },
-    { user: 'Eve', role: 'viewer', avatarUrl: 'https://i.pravatar.cc/70?img=5', secondaryIconUrl: HEART_URL, text: 'Cheer: 1000 bits!', isCheer: true, isSuperChat: true }
-];
+  console.log(`[DEBUG] Renderizando mensagem de "${data.chatname}" (role: ${data.role || 'viewer'})`);
 
-let messageIndex = 0;
+  const isSuper = data.chatmessage && data.chatmessage.toLowerCase().includes('super chat');
+  const isCheer = data.type && data.type.toLowerCase().includes('cheer');
 
-function createMessageElement(messageData) {
-    console.log(`[DEBUG] Criando mensagem para ${messageData.user} (role: ${messageData.role})`);
-    const messageElement = document.createElement('div');
-    messageElement.classList.add('chat-message', messageData.role);
+  if (isSuper) {
+    data.secondaryIconUrl = 'https://dodo.ac/np/images/thumb/3/3c/Heart_Crystal_NH_Inv_Icon.png/96px-Heart_Crystal_NH_Inv_Icon.png';
+    console.log("[DEBUG] Mensagem identificada como SUPERCHAT (secondary trocado para coração)");
+  }
 
-    const isSuperChat = !!(messageData.text && messageData.text.toLowerCase().includes('super chat'));
-    const isCheer = !!messageData.isCheer;
+  const msgEl = document.createElement('div');
+  msgEl.classList.add('chat-message', (data.role||'viewer').toLowerCase());
+  if (isSuper) msgEl.classList.add('superchat');
+  if (isCheer) msgEl.classList.add('cheer');
 
-    if (isSuperChat) {
-        messageElement.classList.add('superchat');
-        console.log(`[DEBUG] Mensagem de ${messageData.user} marcada como SUPERCHAT`);
-        messageData.secondaryIconUrl = HEART_URL;
-    }
-    if (isCheer) {
-        messageElement.classList.add('cheer');
-        console.log(`[DEBUG] Mensagem de ${messageData.user} marcada como CHEER`);
-    }
+  // Avatar + secondary
+  const avatarGroup = document.createElement('div');
+  avatarGroup.classList.add('avatar-icon-group');
+  const avatarDiv = document.createElement('div');
+  avatarDiv.classList.add('chat-avatar');
+  const avatarImg = document.createElement('img');
+  avatarImg.src = data.chatimg || '';
+  avatarImg.onload = () => console.log(`[DEBUG] Avatar carregado para ${data.chatname}`);
+  avatarImg.onerror = () => console.error(`[ERRO] Falha ao carregar avatar para ${data.chatname}`);
+  avatarDiv.appendChild(avatarImg);
+  avatarGroup.appendChild(avatarDiv);
 
-    const avatarGroup = document.createElement('div');
-    avatarGroup.classList.add('avatar-icon-group');
+  if (data.secondaryIconUrl) {
+    const secDiv = document.createElement('div');
+    secDiv.classList.add('secondary-icon');
+    const secImg = document.createElement('img');
+    secImg.src = data.secondaryIconUrl;
+    secImg.onload = () => console.log(`[DEBUG] Secondary icon carregado para ${data.chatname}`);
+    secImg.onerror = () => console.error(`[ERRO] Falha ao carregar secondary icon para ${data.chatname}`);
+    secDiv.appendChild(secImg);
+    avatarGroup.appendChild(secDiv);
+  }
+  msgEl.appendChild(avatarGroup);
 
-    const avatarDiv = document.createElement('div');
-    avatarDiv.classList.add('chat-avatar');
-    const avatarImg = document.createElement('img');
-    avatarImg.src = messageData.avatarUrl;
-    avatarImg.onload = () => console.log(`[DEBUG] Avatar carregado para ${messageData.user}`);
-    avatarImg.onerror = () => console.error(`[ERRO] Falha ao carregar avatar de ${messageData.user}`);
-    avatarDiv.appendChild(avatarImg);
-    avatarGroup.appendChild(avatarDiv);
+  // Nome e balão
+  const messageGroup = document.createElement('div');
+  messageGroup.classList.add('message-group');
 
-    if (messageData.secondaryIconUrl) {
-        const secDiv = document.createElement('div');
-        secDiv.classList.add('secondary-icon');
-        const secImg = document.createElement('img');
-        secImg.src = messageData.secondaryIconUrl;
-        secImg.onload = () => console.log(`[DEBUG] Secondary icon carregado para ${messageData.user}`);
-        secImg.onerror = () => console.error(`[ERRO] Falha ao carregar secondary icon de ${messageData.user}`);
-        secDiv.appendChild(secImg);
-        avatarGroup.appendChild(secDiv);
-    }
+  const usernameContainer = document.createElement('div');
+  usernameContainer.classList.add('username-container');
+  const usernameSpan = document.createElement('span');
+  usernameSpan.classList.add('username');
+  usernameSpan.textContent = data.chatname || '';
+  usernameContainer.appendChild(usernameSpan);
+  messageGroup.appendChild(usernameContainer);
 
-    messageElement.appendChild(avatarGroup);
+  const bubble = document.createElement('div');
+  bubble.classList.add('message-bubble');
+  bubble.textContent = data.chatmessage || '';
 
-    const messageGroup = document.createElement('div');
-    messageGroup.classList.add('message-group');
-
-    const usernameContainer = document.createElement('div');
-    usernameContainer.classList.add('username-container');
-    const usernameSpan = document.createElement('span');
-    usernameSpan.classList.add('username');
-    usernameSpan.textContent = messageData.user;
-    usernameContainer.appendChild(usernameSpan);
-    messageGroup.appendChild(usernameContainer);
-
-    const bubble = document.createElement('div');
-    bubble.classList.add('message-bubble');
-    bubble.textContent = messageData.text;
-
-    if (isCheer) {
-        const cheerIcon = document.createElement('img');
-        cheerIcon.classList.add('cheer-icon');
-        cheerIcon.src = 'https://dodo.ac/np/images/thumb/d/d2/30%2C000_Bells_NH_Inv_Icon.png/120px-30%2C000_Bells_NH_Inv_Icon.png';
-        bubble.appendChild(cheerIcon);
-    }
-    if (isSuperChat) {
-        const superIcon = document.createElement('img');
-        superIcon.classList.add('superchat-icon');
-        superIcon.src = 'https://dodo.ac/np/images/thumb/d/d2/30%2C000_Bells_NH_Inv_Icon.png/120px-30%2C000_Bells_NH_Inv_Icon.png';
-        bubble.appendChild(superIcon);
-    }
-
-    messageGroup.appendChild(bubble);
-    messageElement.appendChild(messageGroup);
-
-    return messageElement;
-}
-
-function simulateMessage() {
-    const message = messagesToSimulate[messageIndex];
-    console.log(`[DEBUG] Simulando mensagem ${messageIndex+1}/${messagesToSimulate.length} - Usuário: ${message.user}`);
-    const el = createMessageElement(message);
-    chatContainer.appendChild(el);
-    messageIndex = (messageIndex + 1) % messagesToSimulate.length;
-
-    if (chatContainer.childElementCount > 5) {
-        chatContainer.removeChild(chatContainer.firstChild);
-        console.log("[DEBUG] Removida mensagem antiga para manter até 5 no chat");
-    }
-}
-
-setInterval(simulateMessage, 3000);
-</script>
-</body>
-</html>
+  // Ícones no balão
+  const bellBagUrl = 'https://dodo.ac/np/images/thumb/d/d3/Bell_Bag_NH_Inv_Icon.png/96px-Bell_Bag_NH_Inv_Icon.png';
+  if (isCheer) {
+    const cheerIcon = document.createElement('img');
+    cheerIcon.classList.add('cheer-icon');
