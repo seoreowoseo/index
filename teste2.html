@@ -7,8 +7,9 @@
   <style>
     body {
       margin: 0;
-      font-family: 'Baloo 2', cursive;
+      padding: 0;
       background: transparent;
+      font-family: 'Baloo 2', cursive;
       overflow: hidden;
     }
 
@@ -23,7 +24,7 @@
       gap: 10px;
     }
 
-    .chat-message {
+    .message-item {
       display: flex;
       align-items: center;
       background: #fff;
@@ -35,7 +36,7 @@
       position: relative;
     }
 
-    .avatar {
+    .message-avatar {
       width: 40px;
       height: 40px;
       border-radius: 50%;
@@ -45,7 +46,7 @@
       box-shadow: 0 0 0 2px #ff69b4;
     }
 
-    .username {
+    .message-username {
       font-weight: bold;
       color: #ff69b4;
       margin-right: 8px;
@@ -72,7 +73,7 @@
 
   <script>
     const MAX_MESSAGES = 10;
-    const messageListWrapper = document.getElementById("message-list-wrapper");
+    const wrapper = document.getElementById("message-list-wrapper");
 
     window.addEventListener("message", (event) => {
       if (event.data && event.data.type === "chat") {
@@ -81,29 +82,29 @@
     });
 
     function addMessageToOverlay(data) {
-      const messageEl = document.createElement("div");
-      messageEl.className = "chat-message";
+      const item = document.createElement("div");
+      item.className = "message-item";
 
-      const avatarEl = document.createElement("img");
-      avatarEl.className = "avatar";
-      avatarEl.src = data.avatar || "https://placekitten.com/40/40";
+      const avatar = document.createElement("img");
+      avatar.className = "message-avatar";
+      avatar.src = data.avatar || "https://placekitten.com/40/40";
 
-      const usernameEl = document.createElement("span");
-      usernameEl.className = "username";
-      usernameEl.textContent = data.username || "Visitante";
+      const username = document.createElement("span");
+      username.className = "message-username";
+      username.textContent = data.username || "Visitante";
 
-      const textEl = document.createElement("span");
-      textEl.className = "message-text";
-      textEl.textContent = data.message || "";
+      const text = document.createElement("span");
+      text.className = "message-text";
+      text.textContent = data.message || "";
 
-      messageEl.appendChild(avatarEl);
-      messageEl.appendChild(usernameEl);
-      messageEl.appendChild(textEl);
+      item.appendChild(avatar);
+      item.appendChild(username);
+      item.appendChild(text);
 
-      messageListWrapper.appendChild(messageEl);
+      wrapper.appendChild(item);
 
-      if (messageListWrapper.children.length > MAX_MESSAGES) {
-        messageListWrapper.removeChild(messageListWrapper.firstChild);
+      if (wrapper.children.length > MAX_MESSAGES) {
+        wrapper.removeChild(wrapper.firstChild);
       }
     }
   </script>
