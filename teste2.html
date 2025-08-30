@@ -161,8 +161,9 @@ function addMessageToOverlay(data) {
   messageGroup.appendChild(usernameContainer);
 
   const bubble = document.createElement('div');
-  bubble.classList.add('message-bubble');
-  bubble.textContent = data.chatmessage || '';
+bubble.classList.add('message-bubble');
+// usar innerHTML para renderizar emojis/custom <img> vindo do SSN
+bubble.innerHTML = data.chatmessage || '';
 
   // Ícones no balão
   const bellBagUrl = 'https://dodo.ac/np/images/thumb/d/d3/Bell_Bag_NH_Inv_Icon.png/96px-Bell_Bag_NH_Inv_Icon.png';
