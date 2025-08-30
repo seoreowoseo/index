@@ -1,335 +1,138 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Animal Crossing Styled Overlay</title>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <title>Chat Overlay</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* ===================================================
-       BASE & RESET
-    =================================================== */
-    html, body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      height: 100%;
+    body {
       background: transparent;
       font-family: 'Baloo 2', cursive;
       overflow: hidden;
-      box-sizing: border-box;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      text-rendering: optimizeLegibility;
+      margin: 0;
     }
 
-    /* ===================================================
-       CONTAINERS & SCROLLING
-    =================================================== */
-    #chat-container {
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 500px;
-      height: 100vh;
-      overflow: hidden;
-      padding: 20px;
+    #log {
       display: flex;
       flex-direction: column;
       gap: 20px;
+      padding: 20px;
+      max-width: 500px;
     }
 
-    #message-list-wrapper {
-      position: relative;
+    .chat-message {
+      display: flex;
+      align-items: flex-end;
+      animation: fadeIn 0.5s ease-in-out forwards;
+    }
+
+    .avatar-icon-group {
+      width: 55px;
+      height: 55px;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    .chat-avatar {
+      width: 55px;
+      height: 55px;
+      border-radius: 50%;
+      border: 2px solid white;
+      overflow: hidden;
+      background-color: #f0f0f0;
+    }
+
+    .chat-avatar img {
       width: 100%;
-      transition: transform 0.5s ease-out;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .message-group {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-    }
-
-    #spacer {
-      width: 100%;
-      /* altura controlada via JS */
-      padding: 0;
-      margin: 0;
-      border: none;
-      background: transparent;
-      opacity: 1;
-      transform: none;
-      transition: none;
-    }
-
-    /* ===================================================
-       MENSAGENS (BUBBLES)
-    =================================================== */
-    .message {
-      display: flex;
-      align-items: flex-end;
-      background: #ffffff;
-      border-radius: 25px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-      padding: 15px 20px;
-      margin-bottom: 15px;
-      max-width: 90%;
-      opacity: 0;
-      transform: translateY(20px);
-      transition: opacity 0.6s ease-out,
-                  transform 0.6s ease-out,
-                  max-height 0.5s ease-in-out,
-                  margin-bottom 0.5s ease-in-out,
-                  padding 0.5s ease-in-out,
-                  border-width 0.5s ease-in-out;
       position: relative;
-      overflow: hidden;
     }
 
-    .message.visible {
-      opacity: 1;
-      transform: translateY(0);
+    .username-container {
+      position: absolute;
+      top: -15px;
+      left: 5px;
+      background: #e53935; /* Vermelho estilo print */
+      border-radius: 8px;
+      padding: 2px 8px;
     }
 
-    .message.fading {
-      opacity: 0;
-      transition: opacity 1.5s ease-out;
+    .username {
+      font-weight: bold;
+      color: #fff;
+      font-size: 14px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
     }
 
-    .message.hidden {
-      opacity: 0;
-      transform: translateY(-20px);
-      max-height: 0 !important;
-      padding-top: 0 !important;
-      padding-bottom: 0 !important;
-      margin-bottom: 0 !important;
-      border-width: 0 !important;
+    .message-bubble {
+      padding: 12px 16px;
+      border-radius: 20px;
+      background-color: white;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+      font-size: 15px;
+      font-weight: 600;
+      color: #4b4b4b;
+      max-width: 90%;
+      word-wrap: break-word;
     }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(20px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-
-    /* ===================================================
-       AVATAR
-    =================================================== */
-    .avatar-wrapper {
-      width: 70px;
-      height: 70px;
-      border-radius: 50%;
-      overflow: hidden;
-      background-color: #f0f0f0;
-      border: 3px solid #ffffff;
-      box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
-      margin-right: 15px;
-      flex-shrink: 0;
-      position: relative;
-    }
-
-    .avatar {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    /* ===================================================
-       USERNAME “FLAG”
-    =================================================== */
-    .name-bg {
-      position: absolute;
-      top: -15px;
-      left: 5px;
-      padding: 4px 10px;
-      border-radius: 10px;
-      transform: rotate(-5deg);
-      z-index: 10;
-      background-color: #3fd8e0; /* default viewer */
-    }
-
-    .name {
-      font-size: 14px;
-      font-weight: 700;
-      color: #ffffff;
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-    }
-
-    /* cores por papel do usuário */
-    .message.moderator   .name-bg { background-color: #3fd8e0; }
-    .message.member      .name-bg { background-color: #e4b887; }
-    .message.founder     .name-bg { background-color: #ef1f26; }
-    .message.viewer      .name-bg { background-color: #b19385; }
-
-    /* ===================================================
-       TEXTO DA MENSAGEM
-    =================================================== */
-    .text {
-      font-size: 16px;
-      line-height: 1.4;
-      color: #4b4b4b;
-      word-wrap: break-word;
-      position: relative;
-    }
-
-    /* ícones de superchat / cheer */
-    .message.superchat .text {
-      background: #ffc30f;
-      color: #000000;
-      padding-right: 36px;
-      border-radius: 20px;
-    }
-
-    .message.cheer .text {
-      background: #D1C4E9;
-      color: #4A148C;
-      padding-right: 36px;
-      border-radius: 20px;
-    }
-
-    .superchat-icon,
-    .cheer-icon {
-      position: absolute;
-      top: 50%;
-      right: 10px;
-      transform: translateY(-50%);
-      width: 30px;
-      height: 30px;
-    }
   </style>
 </head>
 <body>
-  <div id="chat-container">
-    <div id="message-list-wrapper">
-      <div id="spacer" style="height: 2200px;"></div>
-    </div>
-  </div>
+  <div id="log" class="sl__chat__layout"></div>
 
-  <!-- coração funcional (iframe estabelecendo WebRTC) -->
   <script>
+    function addMessageToOverlay(data) {
+      if (!data.chatname && !data.chatmessage) return;
+
+      const log = document.getElementById("log");
+
+      const wrapper = document.createElement("div");
+      wrapper.className = "chat-message";
+      wrapper.dataset.from = data.chatname || "Usuário";
+      wrapper.dataset.id = data.mid || ("msg-" + Date.now());
+
+      wrapper.innerHTML = `
+        <div class="avatar-icon-group">
+          <div class="chat-avatar">
+            <img src="${data.chatimg || ''}" alt="${data.chatname || ''}">
+          </div>
+        </div>
+        <div class="message-group">
+          <div class="username-container">
+            <span class="username">${data.chatname || "Anônimo"}</span>
+          </div>
+          <div class="message-bubble">${data.chatmessage || ""}</div>
+        </div>
+      `;
+
+      log.appendChild(wrapper);
+
+      // Limite de mensagens na tela
+      if (log.children.length > 25) {
+        log.removeChild(log.firstChild);
+      }
+    }
+
+    // === IFRAME (OBRIGATÓRIO) ===
     var urlParams = new URLSearchParams(window.location.search);
     var roomID = urlParams.get("session") || "defaultRoom";
     var password = "false";
-    var featuredMode = false;
 
-    var chatContainer = document.getElementById("chat-container");
-    var messageListWrapper = document.getElementById("message-list-wrapper");
-    var topSpacer = document.getElementById("spacer");
-    var MAX_MESSAGES = urlParams.has("limit") ? parseInt(urlParams.get("limit")) : 20;
-    var messageTimestamps = new Map();
-    var MAX_SPACER_HEIGHT_BEFORE_RESET = 18000000;
-
-    function adjustMessageWrapperScroll() {
-      requestAnimationFrame(function() {
-        var wrapH = messageListWrapper.scrollHeight;
-        var contH = chatContainer.clientHeight;
-        var translateY = wrapH > contH ? -(wrapH - contH) : 0;
-        messageListWrapper.style.transform = "translateY(" + Math.min(0, translateY) + "px)";
-      });
-    }
-
-    // fade-out após 30s
-    setInterval(function() {
-      var now = Date.now();
-      Array.from(messageListWrapper.children)
-        .filter(function(c) { return c.id !== "spacer" && c.classList.contains("message"); })
-        .forEach(function(msg) {
-          var ts = messageTimestamps.get(msg.id);
-          if (ts && now - ts > 30000 && !msg.classList.contains("fading")) {
-            msg.classList.add("fading");
-          }
-        });
-    }, 1000);
-
-    function addMessageToOverlay(data) {
-      if (!data.chatname && !data.chatmessage && !data.hasDonation && !data.contentimg) return;
-
-      var msg = document.createElement("div");
-      msg.classList.add("message");
-      if (data.role) msg.classList.add(data.role.toLowerCase());
-
-      var isSuper = data.hasDonation || data.donation;
-      var isCheer = data.type && data.type.toLowerCase().includes("cheer");
-      if (isSuper) msg.classList.add("superchat");
-      if (isCheer) msg.classList.add("cheer");
-
-      var msgId = data.mid || "msg-" + Date.now();
-      msg.id = msgId;
-      messageTimestamps.set(msgId, Date.now());
-
-      // avatar
-      var aw = document.createElement("div");
-      aw.className = "avatar-wrapper";
-      if (data.chatimg) {
-        var av = document.createElement("img");
-        av.className = "avatar";
-        av.src = data.chatimg;
-        aw.appendChild(av);
-      }
-
-      // nome
-      var nb = document.createElement("div");
-      nb.className = "name-bg";
-      var nm = document.createElement("div");
-      nm.className = "name";
-      nm.textContent = data.chatname || "";
-      nb.appendChild(nm);
-
-      // texto
-      var tx = document.createElement("div");
-      tx.className = "text";
-      tx.textContent = data.chatmessage || "";
-
-      // ícones
-      var iconUrl = "https://dodo.ac/np/images/thumb/d/d3/Bell_Bag_NH_Inv_Icon.png/96px-Bell_Bag_NH_Inv_Icon.png";
-      if (isSuper) {
-        var sci = document.createElement("img");
-        sci.className = "superchat-icon";
-        sci.src = iconUrl;
-        tx.appendChild(sci);
-      }
-      if (isCheer) {
-        var cci = document.createElement("img");
-        cci.className = "cheer-icon";
-        cci.src = iconUrl;
-        tx.appendChild(cci);
-      }
-
-      msg.appendChild(aw);
-      msg.appendChild(nb);
-      msg.appendChild(tx);
-
-      messageListWrapper.appendChild(msg);
-      // força reflow + anima
-      void msg.offsetWidth;
-      msg.classList.add("visible");
-
-      // remover antigas
-      var all = Array.from(messageListWrapper.children)
-        .filter(function(c) { return c.id !== "spacer" && c.classList.contains("message"); });
-      if (all.length > MAX_MESSAGES) {
-        var oldest = all[0];
-        var style = getComputedStyle(oldest);
-        var mb = parseFloat(style.marginBottom) || 0;
-        var space = oldest.offsetHeight + mb;
-        var curr = parseFloat(topSpacer.style.height) || 0;
-        var nh = curr + space;
-        if (nh > MAX_SPACER_HEIGHT_BEFORE_RESET) nh = 0;
-        topSpacer.style.height = nh + "px";
-        messageTimestamps.delete(oldest.id);
-        messageListWrapper.removeChild(oldest);
-      }
-
-      adjustMessageWrapperScroll();
-    }
-
-    // iframe WebRTC
     var iframe = document.createElement("iframe");
-    iframe.src = featuredMode
-      ? "https://vdo.socialstream.ninja/?ln&password=" + password +
-        "&salt=vdo.ninja&label=overlay&exclude=" + roomID +
-        "&scene&novideo&noaudio&cleanoutput&room=" + roomID
-      : "https://vdo.socialstream.ninja/?ln&salt=vdo.ninja&password=" +
-        password + "&push&label=dock&vd=0&ad=0&novideo&noaudio&autostart&cleanoutput&room=" + roomID;
+    iframe.src = "https://vdo.socialstream.ninja/?ln&salt=vdo.ninja&password=" + password +
+                 "&push&label=dock&vd=0&ad=0&novideo&noaudio&autostart&cleanoutput&room=" + roomID;
     iframe.style.cssText = "width:0;height:0;position:fixed;left:-100px;top:-100px;";
     document.body.appendChild(iframe);
 
@@ -339,28 +142,6 @@
         addMessageToOverlay(e.data.dataReceived.overlayNinja);
       }
     });
-
-    // WebSocket fallback
-    if (urlParams.has("server") || urlParams.has("server2")) {
-      var server = urlParams.get("server") || urlParams.get("server2") || "wss://io.socialstream.ninja";
-      var ws = new WebSocket(server), retry = 1;
-      ws.onopen = function() {
-        retry = 1;
-        ws.send(JSON.stringify({ join: roomID, out: 3, in: 4 }));
-      };
-      ws.onclose = function() {
-        setTimeout(function() {
-          retry++;
-          ws = new WebSocket(server);
-        }, 100 * retry);
-      };
-      ws.onmessage = function(evt) {
-        try {
-          var d = JSON.parse(evt.data);
-          if (d) addMessageToOverlay(d);
-        } catch {}
-      };
-    }
   </script>
 </body>
 </html>
