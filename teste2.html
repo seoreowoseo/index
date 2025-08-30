@@ -1,206 +1,111 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Animal Crossing Overlay</title>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js"></script>
-<style>
-body, html {
-  background: transparent;
-  font-family: 'Baloo 2', cursive;
-  margin:0; padding:0;
-}
-#chat-container {
-  position: fixed;
-  bottom: 0; left: 0;
-  display: flex; flex-direction: column;
-  gap: 20px;
-  max-width: 500px; width: 100%;
-  padding: 20px;
-}
-.chat-message {
-  display: flex; align-items: flex-end;
-  animation: fadeIn 0.5s ease-in-out forwards;
-}
-.avatar-icon-group {
-  position: relative; width: 70px; height: 70px;
-  margin-right: 15px; flex-shrink: 0;
-}
-.chat-avatar {
-  width: 70px; height: 70px; border-radius: 50%;
-  border: 3px solid white; overflow: hidden;
-  background-color: #f0f0f0;
-}
-.chat-avatar img {
-  width: 100%; height: 100%; object-fit: cover;
-}
-.secondary-icon {
-  position: absolute; bottom: -5px; right: -15px;
-  width: 35px; height: 35px; z-index: 3;
-}
-.secondary-icon img {
-  width: 100%; height: 100%; object-fit: contain;
-}
-.message-group {
-  position: relative; flex-grow: 1;
-  display: flex; flex-direction: column; align-items: flex-start;
-}
-.message-bubble {
-  padding: 15px 20px; border-radius: 25px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-  background-color: white; max-width: 90%;
-  font-weight: 800; color: #4b4b4b; font-size: 16px;
-}
-.chat-message.moderator .message-bubble { background-color: #b4cce4; }
-.chat-message.member .message-bubble    { background-color: #e4b887; }
-.chat-message.founder .message-bubble   { background-color: #F78C4A; }
-.chat-message.viewer .message-bubble    { background-color: white; }
-.chat-message.superchat .message-bubble {
-  background-color: #ffc30f; color: #000; padding-right: 36px;
-}
-.chat-message.cheer .message-bubble {
-  background-color: #D1C4E9; color: #4A148C; padding-right: 36px;
-}
-.username-container {
-  position: absolute; top: -15px; left: 5px;
-  border-radius: 10px; padding: 4px 10px;
-  transform: rotate(-5deg); z-index: 10;
-}
-.chat-message.moderator .username-container { background-color: #3fd8e0; }
-.chat-message.member .username-container    { background-color: #e4b887; }
-.chat-message.founder .username-container   { background-color: #ef1f26; }
-.chat-message.viewer .username-container    { background-color: #b19385; }
-.username {
-  font-weight: bold; color: #fff; font-size: 14px;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-}
-.chat-message.superchat .superchat-icon,
-.chat-message.cheer .cheer-icon {
-  position: absolute; top: 20%; right: -2px;
-  transform: translateY(-50%);
-  width: 30px; height: 30px;
-}
-@keyframes fadeIn {
-  from { opacity:0; transform:translateY(20px); }
-  to { opacity:1; transform:translateY(0); }
-}
-</style>
+  <meta charset="UTF-8" />
+  <title>Overlay Amoroso</title>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Baloo 2', cursive;
+      background: transparent;
+      overflow: hidden;
+    }
+
+    #message-list-wrapper {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px;
+      gap: 10px;
+    }
+
+    .chat-message {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      padding: 10px 16px;
+      max-width: 90%;
+      animation: fadeIn 0.6s ease-out;
+      position: relative;
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      overflow: hidden;
+      margin-right: 12px;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 2px #ff69b4;
+    }
+
+    .username {
+      font-weight: bold;
+      color: #ff69b4;
+      margin-right: 8px;
+    }
+
+    .message-text {
+      color: #333;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
 </head>
 <body>
-<div id="chat-container"></div>
+  <div id="message-list-wrapper"></div>
 
-<script>
-var urlParams = new URLSearchParams(window.location.search);
-var roomID = urlParams.get("session") || "defaultRoom";
-var password = "false";
+  <iframe
+    src="https://vdo.socialstream.ninja"
+    style="display:none"
+    allow="camera; microphone; display-capture"
+  ></iframe>
 
-var iframe = document.createElement("iframe");
-iframe.src = "https://vdo.socialstream.ninja/?ln&password="+encodeURIComponent(password)
-           + "&push&label=dock&novideo&noaudio&autostart&cleanoutput&room="+encodeURIComponent(roomID);
-iframe.style.cssText = "width:0;height:0;position:fixed;left:-100px;top:-100px;";
-document.body.appendChild(iframe);
+  <script>
+    const MAX_MESSAGES = 10;
+    const messageListWrapper = document.getElementById("message-list-wrapper");
 
-window.addEventListener("message", function(e){
-  if (e.source !== iframe.contentWindow) return;
-  if (e.data.dataReceived && e.data.dataReceived.overlayNinja){
-    addMessageToOverlay(e.data.dataReceived.overlayNinja);
-  }
-});
-
-// ======== Decodificação segura para emojis/HTML ========
-function prepareChatMessageHtml(raw) {
-  if (!raw) return '';
-  let s = String(raw);
-  const txt = document.createElement('textarea');
-  for (let i = 0; i < 3; i++) {
-    txt.innerHTML = s;
-    s = txt.value;
-  }
-  if (window.DOMPurify) {
-    s = DOMPurify.sanitize(s, {
-      ALLOWED_TAGS: ['img','b','i','u','span','div','br','strong','em','a'],
-      ALLOWED_ATTR: ['src','alt','class','title','style','href']
+    window.addEventListener("message", (event) => {
+      if (event.data && event.data.type === "chat") {
+        addMessageToOverlay(event.data);
+      }
     });
-  }
-  return s;
-}
-// =======================================================
 
-const chatContainer = document.getElementById('chat-container');
+    function addMessageToOverlay(data) {
+      const messageEl = document.createElement("div");
+      messageEl.className = "chat-message";
 
-function addMessageToOverlay(data) {
-  if (!data.chatname && !data.chatmessage) return;
+      const avatarEl = document.createElement("img");
+      avatarEl.className = "avatar";
+      avatarEl.src = data.avatar || "https://placekitten.com/40/40";
 
-  const isSuper = data.chatmessage && data.chatmessage.toLowerCase().includes('super chat');
-  const isCheer = data.type && data.type.toLowerCase().includes('cheer');
+      const usernameEl = document.createElement("span");
+      usernameEl.className = "username";
+      usernameEl.textContent = data.username || "Visitante";
 
-  if (isSuper) {
-    data.secondaryIconUrl = 'https://dodo.ac/np/images/thumb/3/3c/Heart_Crystal_NH_Inv_Icon.png/96px-Heart_Crystal_NH_Inv_Icon.png';
-  }
+      const textEl = document.createElement("span");
+      textEl.className = "message-text";
+      textEl.textContent = data.message || "";
 
-  const msgEl = document.createElement('div');
-  msgEl.classList.add('chat-message', (data.role||'viewer').toLowerCase());
-  if (isSuper) msgEl.classList.add('superchat');
-  if (isCheer) msgEl.classList.add('cheer');
+      messageEl.appendChild(avatarEl);
+      messageEl.appendChild(usernameEl);
+      messageEl.appendChild(textEl);
 
-  const avatarGroup = document.createElement('div');
-  avatarGroup.classList.add('avatar-icon-group');
-  const avatarDiv = document.createElement('div');
-  avatarDiv.classList.add('chat-avatar');
-  const avatarImg = document.createElement('img');
-  avatarImg.src = data.chatimg || '';
-  avatarDiv.appendChild(avatarImg);
-  avatarGroup.appendChild(avatarDiv);
+      messageListWrapper.appendChild(messageEl);
 
-  if (data.secondaryIconUrl) {
-    const secDiv = document.createElement('div');
-    secDiv.classList.add('secondary-icon');
-    const secImg = document.createElement('img');
-    secImg.src = data.secondaryIconUrl;
-    secDiv.appendChild(secImg);
-    avatarGroup.appendChild(secDiv);
-  }
-  msgEl.appendChild(avatarGroup);
-
-  const messageGroup = document.createElement('div');
-  messageGroup.classList.add('message-group');
-
-  const usernameContainer = document.createElement('div');
-  usernameContainer.classList.add('username-container');
-  const usernameSpan = document.createElement('span');
-  usernameSpan.classList.add('username');
-  usernameSpan.textContent = data.chatname || '';
-  usernameContainer.appendChild(usernameSpan);
-  messageGroup.appendChild(usernameContainer);
-
-  const bubble = document.createElement('div');
-  bubble.classList.add('message-bubble');
-  bubble.innerHTML = prepareChatMessageHtml(data.chatmessage || '');
-
-  const bellBagUrl = 'https://dodo.ac/np/images/thumb/d/d3/Bell_Bag_NH_Inv_Icon.png/96px-Bell_Bag_NH_Inv_Icon.png';
-  if (isCheer) {
-    const cheerIcon = document.createElement('img');
-    cheerIcon.classList.add('cheer-icon');
-    cheerIcon.src = bellBagUrl;
-    bubble.appendChild(cheerIcon);
-  }
-  if (isSuper) {
-    const superIcon = document.createElement('img');
-    superIcon.classList.add('superchat-icon');
-    superIcon.src = bellBagUrl;
-    bubble.appendChild(superIcon);
-  }
-
-  messageGroup.appendChild(bubble);
-  msgEl.appendChild(messageGroup);
-
-  chatContainer.appendChild(msgEl);
-
-  if (chatContainer.childElementCount > 20) {
-    chatContainer.removeChild(chatContainer.firstChild);
-  }
-}
-</script>
+      if (messageListWrapper.children.length > MAX_MESSAGES) {
+        messageListWrapper.removeChild(messageListWrapper.firstChild);
+      }
+    }
+  </script>
 </body>
 </html>
