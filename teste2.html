@@ -1,21 +1,33 @@
 <!DOCTYPE html>
+<!-- EDITADO para decodificar/embeber emojis HTML corretamente -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Overlay - Cartoon Test</title>
-    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;700&display=swap" rel="stylesheet">
+    <title>Chat Overlay</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <script src="https://socialstream.ninja/libs/colours.js" type="text/javascript"></script>
+    <!-- DOMPurify (opcional mas recomendado) -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@2.4.0/dist/purify.min.js"></script>
+
 <style>
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap');
+
 body, html {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
-    font-family: 'Baloo 2', cursive;
-    background-color: transparent;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background-color: #0000;
     overflow: hidden;
     box-sizing: border-box;
+}
+
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 #chat-container {
@@ -24,26 +36,40 @@ body, html {
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
-    max-width: 400px;
+    max-width: 350px;
     height: 100vh;
     overflow: hidden;
     padding: 0 25px;
     box-sizing: border-box;
 }
 
+#message-list-wrapper {
+    width: 100%;
+    transition: transform 0.5s ease-out;
+}
+
 .message {
-    background: #b7e8a0; /* verde claro */
+    background: linear-gradient(145deg, #1a2a48, #162238);
     padding: 15px;
     margin-bottom: 15px;
-    border-radius: 25px;
-    border: 3px solid #7cc36d;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    color: #3a2d1f; /* marrom escuro */
-    font-size: 1em;
+    border-radius: 15px;
+    border: 1px solid #2e3b55;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    color: #e4e6eb;
     opacity: 0;
     transform: translateY(30px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out,
+                max-height 0.5s ease-in-out, margin-bottom 0.5s ease-in-out, padding-top 0.5s ease-in-out, padding-bottom 0.5s ease-in-out, border-width 0.5s ease-in-out;
+    flex-shrink: 0;
+    overflow: hidden;
+    max-height: 500px;
+    box-sizing: border-box;
     position: relative;
+}
+
+.message-with-edge {
+    border-left: 4px solid;
+    padding-left: 11px;
 }
 
 .message.visible {
@@ -51,50 +77,66 @@ body, html {
     transform: translateY(0);
 }
 
-.name-bg {
-    background-color: #ffda77; /* amarelo fofinho */
-    color: #3a2d1f;
-    padding: 5px 10px;
-    border-radius: 10px;
-    font-weight: bold;
-    display: inline-block;
-    margin-bottom: 5px;
-    box-shadow: 2px 2px 0 #e3b944;
+.message.fading {
+    opacity: 0;
+    transition: opacity 1.5s ease-out;
 }
 
-.text {
-    font-size: 1.1em;
-    line-height: 1.5;
-    margin-top: 5px;
+.message.hidden {
+    opacity: 0;
+    transform: translateY(-30px);
+    max-height: 0px !important;
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    margin-bottom: 0px !important;
+    border-width: 0px !important;
 }
-
-.text img {
-    max-height: 40px; /* emojis grandes */
-    vertical-align: middle;
-}
-
 .avatar-wrapper {
-    width: 55px;
-    height: 55px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
-    margin-right: 12px;
+    display: inline-block;
+    margin-right: 10px;
+    position: relative;
     overflow: hidden;
-    border: 3px solid #7cc36d;
-    background: white;
+    background: linear-gradient(45deg, #4ab8f9, #4cd137);
+    padding: 2px;
+    vertical-align: middle;
+    flex-shrink: 0;
 }
-
-.avatar {
+#spacer {
     width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background-size: cover;
-    background-position: center;
+    padding: 0;
+    margin: 0;
+    border: none;
+    box-sizing: border-box;
+    background: transparent;
+    opacity: 1;
+    transform: none;
+    transition: none;
 }
+.name { color: white; font-size: 1.1em; font-weight: 700; max-width: 200px; overflow: hidden;}
+.text { font-size: 0.9em; line-height: 1.4; margin: 8px 0; word-wrap: break-word; }
+.text img { max-width:100px; max-height: 36px; vertical-align: bottom; display: inline-block; } /* boost height para emojis */
+.donation { color: #4cd137; font-weight: 600; }
+.name-bg { background-color: #4a6fa5; padding: 4px 8px; border-radius: 5px; display: inline-block; vertical-align: middle; margin-right: 8px; }
+.membership-status { color: #ffd700; font-weight: 700; font-size: 0.85em; margin-bottom: 5px; }
+.large-image { max-width: 100%; height: auto; margin-top: 10px; border-radius: 10px; display: block; }
+.avatar { width: 100%; height: 100%; border-radius: 50%; background-size: cover; background-position: center; }
+.source-icon { width: 18px; height: 18px; vertical-align: middle; margin-left: 5px; }
+.badge { display: inline-block; height: 0.9em; margin-left: 4px; vertical-align: middle; }
 
 .message-content-wrapper {
     display: flex;
     align-items: flex-start;
+    border-radius: 8px;
 }
+
+.message-text-meta {
+    flex-grow: 1;
+    min-width: 0;
+}
+
 </style>
 </head>
 <body>
@@ -103,6 +145,7 @@ body, html {
         <div id="spacer" style="height: 2200px; width: 100%;"></div>
     </div>
 </div>
+
 <script>
     var urlParams = new URLSearchParams(window.location.search);
     var roomID = "iWWnKL28tQ";
@@ -117,7 +160,7 @@ body, html {
     const MAX_MESSAGES = urlParams.has("limit") ? parseInt(urlParams.get("limit")) : 20;
     const topSpacer = document.getElementById('spacer');
     const messageTimestamps = new Map();
-    const MAX_SPACER_HEIGHT_BEFORE_RESET = 18000000; 
+    const MAX_SPACER_HEIGHT_BEFORE_RESET = 18000000;
 
     function adjustMessageWrapperScroll() {
         requestAnimationFrame(() => {
@@ -137,6 +180,7 @@ body, html {
         const messages = Array.from(messageListWrapper.children).filter(
             child => child.id !== 'spacer' && child.classList.contains('message')
         );
+
         messages.forEach(message => {
             const timestamp = messageTimestamps.get(message.id);
             if (timestamp) {
@@ -146,7 +190,37 @@ body, html {
                 }
             }
         });
-    }, 1000); 
+    }, 1000);
+
+    /* ========== NOVA FUNÇÃO: PREPARA/DECODIFICA MENSAGEM ========== */
+    function prepareChatMessageHtml(raw) {
+        if (!raw) return '';
+
+        // garantir string
+        let s = String(raw);
+
+        // Decodificar entidades HTML comuns (inclui casos &amp;lt; ou &lt;)
+        s = s.replace(/&amp;/g, '&')
+             .replace(/&lt;/g, '<')
+             .replace(/&gt;/g, '>')
+             .replace(/&quot;/g, '"')
+             .replace(/&#39;/g, "'")
+             .replace(/&nbsp;/g, ' ');
+
+        // Remover scripts por segurança
+        s = s.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
+
+        // Opcional: sanitizar com DOMPurify (preserva <img src=...>)
+        if (window.DOMPurify) {
+            s = DOMPurify.sanitize(s, {
+                ALLOWED_TAGS: ['img','b','i','u','span','div','br','strong','em','a'],
+                ALLOWED_ATTR: ['src','alt','class','title','style','href']
+            });
+        }
+
+        return s;
+    }
+    /* ============================================================ */
 
     function addMessageToOverlay(data) {
         if (!data.chatname && !data.chatmessage && !data.hasDonation && !data.donation && !data.contentimg){
@@ -160,19 +234,72 @@ body, html {
         messageDiv.id = messageId;
         messageTimestamps.set(messageId, Date.now());
 
-        const avatarHtml = data.chatimg ? 
-            `<div class="avatar-wrapper"><div class="avatar" style="background-image: url('${data.chatimg}');"></div></div>` : '';
-        const nameHtml = data.chatname ? `<div class="name-bg">${data.chatname}</div>` : '';
-        const messageTextHtml = `<div class="text">${data.chatmessage ? data.chatmessage : ''}</div>`;
+        var chatbadgesHtml = "";
+        if (data.chatbadges) {
+            data.chatbadges.forEach(badge => {
+                if (typeof badge === "object") {
+                    if (badge.type === "img" && badge.src) {
+                        chatbadgesHtml += `<img class='badge' src='${badge.src}' alt='badge'>`;
+                    } else if (badge.type === "svg" && badge.html) {
+                        chatbadgesHtml += `<span class='badge svg'>${badge.html}</span>`;
+                    }
+                } else {
+                    chatbadgesHtml += `<img class='badge' src='${badge}' alt='badge'>`;
+                }
+            });
+        }
+
+        let avatarBorderColor = "linear-gradient(45deg, #4ab8f9, #4cd137)";
+        if (data.nameColor) {
+            avatarBorderColor = `linear-gradient(45deg, ${data.nameColor}, ${data.nameColor}88)`;
+        }
+
+        let leftEdgeColor = null;
+        if (typeof getColorFromType === 'function' && data.type) {
+            try {
+                leftEdgeColor = getColorFromType(data.type);
+            } catch (e) {
+                console.error("Error getting color from type:", e);
+            }
+        }
+
+        if (leftEdgeColor) {
+            messageDiv.style.borderLeft = `4px solid ${leftEdgeColor}`;
+            messageDiv.style.paddingLeft = '12px';
+        }
+
+        const sourceIconHtml = data.type ? `<img src="https://socialstream.ninja/sources/images/${data.type}.png" alt="Source" class="source-icon">` : '';
+        const avatarHtml = data.chatimg ?
+            `<div class="avatar-wrapper" style="background: ${avatarBorderColor}"><div class="avatar" style="background-image: url('${data.chatimg}');"></div></div>` : '';
+        const nameHtml = data.chatname ? `<div class="name-bg"><div class="name" ${data.nameColor ? `style="text-shadow: 0 0 3px ${data.nameColor}"` : ''}>${data.chatname}</div></div>` : '';
+        const membershipHtml = data.membership ? `<div class="membership-status">${data.membership}</div>` : '';
+
+        // USAR prepareChatMessageHtml PARA GARANTIR QUE <img> / ENTIDADES SEJAM RENDERIZADAS
+        const preparedHtml = prepareChatMessageHtml(data.chatmessage ? data.chatmessage : '');
+        const messageTextHtml = `<div class="text" ${data.event ? 'style="font-style: italic;"' : ''}>${preparedHtml}</div>`;
+
+        const donationHtml = data.hasDonation ? `<div class="donation">${data.hasDonation}</div>` : '';
+
+        const contentImgHtml = data.contentimg ?
+            `<div style="padding: 3px; border-radius: 12px; background: ${avatarBorderColor}; display: inline-block; margin-top: 10px;">
+                <img src="${data.contentimg}" alt="Content Image" class="large-image" style="margin-top: 0; border-radius: 8px;" onerror="this.parentNode.style.display='none';">
+             </div>` : '';
 
         messageDiv.innerHTML = `
             <div class="message-content-wrapper">
                 ${avatarHtml}
                 <div class="message-text-meta">
-                    ${nameHtml}
+                    <div>
+                        ${nameHtml}
+                        ${sourceIconHtml}
+                        ${chatbadgesHtml}
+                    </div>
+                    ${membershipHtml}
                     ${messageTextHtml}
+                    ${donationHtml}
                 </div>
             </div>
+            ${contentImgHtml}
         `;
 
         messageListWrapper.appendChild(messageDiv);
@@ -180,21 +307,30 @@ body, html {
         messageDiv.classList.add('visible');
 
         const messages = Array.from(messageListWrapper.children).filter(
-            child => child.id !== 'spacer' && child.classList.contains('message') 
+            child => child.id !== 'spacer' && child.classList.contains('message')
         );
 
         if (messages.length > MAX_MESSAGES) {
-            const oldestMessage = messages[0]; 
+            const oldestMessage = messages[0];
             if (oldestMessage) {
-                const spaceOccupied = oldestMessage.offsetHeight + (parseFloat(getComputedStyle(oldestMessage).marginBottom) || 0);
+                const messageStyle = getComputedStyle(oldestMessage);
+                const marginBottom = parseFloat(messageStyle.marginBottom) || 0;
+                const spaceOccupiedByOldestMessage = oldestMessage.offsetHeight + marginBottom;
                 const currentSpacerHeight = parseFloat(topSpacer.style.height) || 0;
-                let newHeight = currentSpacerHeight + spaceOccupied;
-                if (newHeight > MAX_SPACER_HEIGHT_BEFORE_RESET) newHeight = 0;
-                topSpacer.style.height = newHeight + 'px';
+                let newPotentialSpacerHeight = currentSpacerHeight + spaceOccupiedByOldestMessage;
+
+                if (newPotentialSpacerHeight > MAX_SPACER_HEIGHT_BEFORE_RESET) {
+                    console.log(`Spacer height (${newPotentialSpacerHeight}px) exceeded threshold (${MAX_SPACER_HEIGHT_BEFORE_RESET}px). Resetting to 0px.`);
+                    newPotentialSpacerHeight = 0;
+                }
+
+                topSpacer.style.height = newPotentialSpacerHeight + 'px';
+
                 messageTimestamps.delete(oldestMessage.id);
                 messageListWrapper.removeChild(oldestMessage);
             }
         }
+
         adjustMessageWrapperScroll();
     }
 
@@ -202,17 +338,52 @@ body, html {
     if (featuredMode){
         iframe.src = `https://vdo.socialstream.ninja/?ln&password=${password}&salt=vdo.ninja&label=overlay&exclude=${roomID}&scene&novideo&noaudio&cleanoutput&room=${roomID}`;
     } else {
-        iframe.src = "https://vdo.socialstream.ninja/?ln&salt=vdo.ninja&password="+password+"&push&label=dock&vd=0&ad=0&novideo&noaudio&autostart&cleanoutput&room="+roomID; 
+        iframe.src = "https://vdo.socialstream.ninja/?ln&salt=vdo.ninja&password="+password+"&push&label=dock&vd=0&ad=0&novideo&noaudio&autostart&cleanoutput&room="+roomID;
     }
-    iframe.style.cssText = "width:0;height:0;position:fixed;left:-100px;top:-100px;";
+    iframe.style.cssText = "width: 0px; height: 0px; position: fixed; left: -100px; top: -100px;";
     document.body.appendChild(iframe);
-
     window.addEventListener("message", function (e) {
         if (e.source != iframe.contentWindow) return;
         if (e.data.dataReceived && e.data.dataReceived.overlayNinja) {
             addMessageToOverlay(e.data.dataReceived.overlayNinja);
         }
     });
+
+    var conCon = 1;
+    var socketserver = false;
+    var serverURL = urlParams.has("localserver") ? "ws://127.0.0.1:3000" : "wss://io.socialstream.ninja";
+
+    function setupSocket(){
+        socketserver.onclose = function (){
+            setTimeout(function(){
+                conCon+=1;
+                socketserver = new WebSocket(serverURL);
+                setupSocket();
+            },100*conCon);
+        };
+        socketserver.onopen = function (){
+            conCon = 1;
+            socketserver.send(JSON.stringify({"join":roomID, "out":3, "in":4}));
+        };
+        socketserver.addEventListener('message', function (event) {
+            if (event.data){
+                try {
+                    var data = JSON.parse(event.data);
+                    if (data) {
+                        addMessageToOverlay(data);
+                    }
+                } catch (error) {
+                    console.error("Error processing WebSocket message:", error, "Data:", event.data);
+                }
+            }
+        });
+    }
+
+    if (urlParams.has("server") || urlParams.has("server2")){
+        serverURL = urlParams.get("server") ||  urlParams.get("server2") || serverURL;
+        socketserver = new WebSocket(serverURL);
+        setupSocket();
+    }
 </script>
 </body>
 </html>
